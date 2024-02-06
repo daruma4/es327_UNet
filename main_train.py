@@ -29,6 +29,7 @@ PATH_AUG_IMAGE = os.path.join(DATASET_DIR, "augmented\\image")
 PATH_AUG_MASK = os.path.join(DATASET_DIR, "augmented\\mask")
 PATH_NIFTI = os.path.join(DATASET_DIR, "nifti")
 PATH_NIFTI_META = os.path.join(PATH_NIFTI, "meta.json")
+PATH_PREDICT_SAVE = os.path.join(ASSETS_DIR, "predict")
 ################################
 #||                          #||
 #||       Nifti to PNG       #||
@@ -128,17 +129,10 @@ def predict(model_path: str):
                          image_array=niftiSave.load_images(PATH_AUG_IMAGE, normalize=True), 
                          mask_array=niftiSave.load_images(PATH_AUG_MASK, normalize=True))
 
-     ran_image, ran_mask, predicted_mask = predictorObj.random_predict()
-     fig, subplots = plt.subplots(3, 1)
-     subplots[0].imshow(ran_image, cmap='gray')
-     subplots[0].set_title(f"Image")
-     subplots[1].imshow(ran_mask, cmap='gray')
-     subplots[1].set_title(f"Mask")
-     subplots[2].imshow(np.reshape(predicted_mask, (256,256,1)), cmap='gray')
-     subplots[2].set_title(f"Predicted Mask")
-     for subplot in subplots:
-          subplot.set_xticks([])
-          subplot.set_yticks([])
-     plt.show()
+     ran_image, ran_mask, predicted_mask = predictorObj.predict_for_3d()
+     niftiSave.save_images(save_path=PATH_PREDICT_SAVE, save_prefix="r", img_iterable=ran_image, mask_bool=False)
+     niftiSave.save_images(save_path=PATH_PREDICT_SAVE, save_prefix="m", img_iterable=ran_mask, mask_bool=True)
+     niftiSave.save_images(save_path=PATH_PREDICT_SAVE, save_prefix="p", img_iterable=predicted_mask, mask_bool=True)
 
-# predict(os.path.join(DEFAULT_LOGS_DIR, "fn32-bs16-lr0.0001.h5"))
+model_path = os.path.join(DEFAULT_LOGS_DIR, "fn32-bs16-lr0.0001.h5")
+predict(model_path=model_path)
