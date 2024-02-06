@@ -22,5 +22,3 @@ Best achieved using an Anacodna environment: https://docs.conda.io/projects/mini
    ```
    pip install -r requirements.txt
    ```
-## TO-DO
-1. Redo all files into callable functions instead of commenting out (bad practice, should have used a .ipynb...)
