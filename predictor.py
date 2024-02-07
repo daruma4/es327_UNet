@@ -17,6 +17,17 @@ class predictor:
             _type_: _description_
         """
         return self.model.predict(img[None,...])
+    
+    def predict_for_3d(self, slice_num=0):
+        img_raw_list = []
+        img_predict_list = []
+        mask_raw_list = []
+        for i in range(16 * slice_num, (16 * slice_num) + 16):
+            img = self.image_array[i]
+            img_predict_list.append(self.predict_single(img)[0])
+            img_raw_list.append(self.image_array[i] * 255)
+            mask_raw_list.append(self.mask_array[i])
+        return img_raw_list, img_predict_list, mask_raw_list
 
     def random_predict(self):
         """Randomly selects an image from the object image_array and returns the predicted mask using the model
