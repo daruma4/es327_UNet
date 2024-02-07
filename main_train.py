@@ -99,23 +99,20 @@ def main_trainer(img_height=256, img_width=256, img_channels=1, epochs=100, filt
      #Prepare model
      myModel = unetObj.create_unet_model(filter_num=filter_num)
      optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-     loss = unetObj.j_iou_loss
-     ## Investigation needed - why does it train on J_dice_coef_loss and not g...
-
-     ## SHOULD EXPERIMENT WITH SMOOTHING VALUE IN J_IOU_LOSS 
-     metrics = [unetObj.g_dice_coef_loss, unetObj.j_dice_coef_loss, unetObj.g_iou, unetObj.j_iou, unetObj.g_iou_loss]
+     loss = unetObj.j_dice_coef_loss
+     ## SHOULD EXPERIMENT WITH SMOOTHING VALUE IN J_IOU_LOSS
+     metrics = [unetObj.j_dice_coef, unetObj.j_iou]
      myModel.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
      #Prepare callbacks
+     myModelHistorySavePath = os.path.join(DEFAULT_LOGS_DIR, f"fn{filter_num}-bs{batch_size}-lr{learning_rate}.npy")
      earlystopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, verbose=1)
      reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.1,patience=3,verbose=1)
-
+     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath=myModelSavePath,monitor='val_loss',save_best_only=True,verbose=1,mode="min")
 
      #Do fit
-     myModel_trained = myModel.fit(x=aug_images, y=aug_masks, validation_split=0.25, batch_size=batch_size, epochs=unetObj.epochs, shuffle=True, callbacks=[earlystopper, reduce_lr])
+     myModel_trained = myModel.fit(x=aug_images, y=aug_masks, validation_split=0.25, batch_size=batch_size, epochs=unetObj.epochs, shuffle=True, callbacks=[earlystopper, reduce_lr, checkpoint_callback])
      myModelSavePath = os.path.join(DEFAULT_LOGS_DIR, f"fn{filter_num}-bs{batch_size}-lr{learning_rate}.h5")
-     myModelHistorySavePath = os.path.join(DEFAULT_LOGS_DIR, f"fn{filter_num}-bs{batch_size}-lr{learning_rate}.npy")
-     myModel.save(myModelSavePath)
      np.save(myModelHistorySavePath, myModel_trained.history)
 
 
