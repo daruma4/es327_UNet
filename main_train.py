@@ -94,28 +94,33 @@ def main_augmentation():
 def main_trainer(img_height=256, img_width=256, img_channels=1, epochs=100, filter_num=32, batch_size=16, learning_rate=0.0001):
      #Should setup to change filter_num, batch_size and learning_rate
      unetObj = unet.unet_model(filter_num=filter_num, img_height=img_height, img_width=img_width, img_channels=img_channels, epochs=epochs)
-     aug_images = niftiSave.load_images(PATH_AUG_IMAGE, normalize=True)
-     aug_masks = niftiSave.load_images(PATH_AUG_MASK, normalize=True)
+     aug_images = niftiSave.load_images(PATH_RAW_IMAGE, normalize=True)
+     aug_masks = niftiSave.load_images(PATH_RAW_MASK, normalize=True)
 
      #Prepare model
      myModel = unetObj.create_unet_model(filter_num=filter_num)
      optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
      loss = unetObj.j_dice_coef_loss
      ## SHOULD EXPERIMENT WITH SMOOTHING VALUE IN J_IOU_LOSS
-     metrics = [unetObj.j_dice_coef, unetObj.j_iou]
+     metrics = [unetObj.j_dice_coef, unetObj.j_iou, losses.bce_dice_loss, losses.dice_loss, losses.bce_jaccard_loss, losses.jaccard_loss]
      myModel.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
      #Prepare callbacks
-     myModelHistorySavePath = os.path.join(DEFAULT_LOGS_DIR, f"fn{filter_num}-bs{batch_size}-lr{learning_rate}.npy")
+     myModelSavePath = os.path.join(DEFAULT_LOGS_DIR, f"2D_fn{filter_num}-bs{batch_size}-lr{learning_rate}.h5")
      earlystopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, verbose=1)
      reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.1,patience=3,verbose=1)
      checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath=myModelSavePath,monitor='val_loss',save_best_only=True,verbose=1,mode="min")
 
      #Do fit
      myModel_trained = myModel.fit(x=aug_images, y=aug_masks, validation_split=0.25, batch_size=batch_size, epochs=unetObj.epochs, shuffle=True, callbacks=[earlystopper, reduce_lr, checkpoint_callback])
-     myModelSavePath = os.path.join(DEFAULT_LOGS_DIR, f"fn{filter_num}-bs{batch_size}-lr{learning_rate}.h5")
+     myModelHistorySavePath = os.path.join(DEFAULT_LOGS_DIR, f"2D_fn{filter_num}-bs{batch_size}-lr{learning_rate}.npy")
      np.save(myModelHistorySavePath, myModel_trained.history)
 
+#base fn=32, bs=16, lr=0.0001
+# fn 16 - 32 - 64
+# bs 8 - 16 - 32
+# lr 0.001 - 0.0001 - 0.00001
+main_trainer(epochs=10, filter_num=32, batch_size=16, learning_rate=0.0001)
 
 # ################################
 # #||                          #||
