@@ -9,6 +9,7 @@ import numpy as np
 import albumentations
 
 #Local
+import losses
 import niftiSave
 import unet
 import predictor
@@ -131,5 +132,5 @@ def predict(model_path: str):
      niftiSave.save_images(save_path=PATH_PREDICT_SAVE, save_prefix="m", img_iterable=ran_mask, mask_bool=True)
      niftiSave.save_images(save_path=PATH_PREDICT_SAVE, save_prefix="p", img_iterable=predicted_mask, mask_bool=True)
 
-model_path = os.path.join(DEFAULT_LOGS_DIR, "fn32-bs16-lr0.0001.h5")
-predict(model_path=model_path)
+# model_path = os.path.join(DEFAULT_LOGS_DIR, "fn32-bs16-lr0.0001.h5")
+# predict(model_path=model_path)
