@@ -71,10 +71,12 @@ def main_nifti():
 def main_augmentation():
      AUGMENTATIONS_LIST = albumentations.Compose(
           [
-               albumentations.Blur(blur_limit=15, p=0.5),
-               albumentations.HorizontalFlip(p=0.5),
-               albumentations.VerticalFlip(p=0.5),
-               albumentations.RandomRotate90(p=0.5)
+               albumentations.ImageCompression(quality_lower=60, quality_upper=100, p=0.5),
+               albumentations.GaussNoise(p=0.1),
+               albumentations.GaussianBlur(blur_limit=3, p=0.05),
+               albumentations.HorizontalFlip(),
+               albumentations.OneOf([albumentations.RandomBrightnessContrast(), albumentations.FancyPCA(), albumentations.HueSaturationValue()], p=0.7),
+               albumentations.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.2, rotate_limit=10, border_mode=cv2.BORDER_CONSTANT, p=0.5),
           ]
      )
 
@@ -94,8 +96,8 @@ def main_augmentation():
 def main_trainer(img_height=256, img_width=256, img_channels=1, epochs=100, filter_num=32, batch_size=16, learning_rate=0.0001):
      #Should setup to change filter_num, batch_size and learning_rate
      unetObj = unet.unet_model(filter_num=filter_num, img_height=img_height, img_width=img_width, img_channels=img_channels, epochs=epochs)
-     aug_images = niftiSave.load_images(PATH_RAW_IMAGE, normalize=True)
-     aug_masks = niftiSave.load_images(PATH_RAW_MASK, normalize=True)
+     aug_images = niftiSave.load_images(PATH_AUG_IMAGE, normalize=True)
+     aug_masks = niftiSave.load_images(PATH_AUG_MASK, normalize=True)
 
      #Prepare model
      myModel = unetObj.create_unet_model(filter_num=filter_num)
@@ -121,7 +123,6 @@ def main_trainer(img_height=256, img_width=256, img_channels=1, epochs=100, filt
 # bs 8 - 16 - 32
 # lr 0.001 - 0.0001 - 0.00001
 main_trainer(epochs=10, filter_num=32, batch_size=16, learning_rate=0.0001)
-
 # ################################
 # #||                          #||
 # #||        Predictor         #||
