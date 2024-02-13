@@ -37,6 +37,8 @@ PATH_PREDICT_SAVE = os.path.join(ASSETS_DIR, "predict")
 #||                          #||
 ################################
 def main_nifti():
+     """Converts Nifti file into individual images saved to PATH_RAW_IMAGE and PATH_RAW_MASK
+     """
      #Load Nifti metadata and create niftisaver instance
      try:
           metadata = json.load(open(PATH_NIFTI_META))
@@ -69,6 +71,8 @@ def main_nifti():
 #||                          #||
 ################################
 def main_augmentation():
+     """Uses AUGMENTATIONS_LIST to augment all images in PATH_RAW_IMAGE and PATH_RAW_MASK. Saves to PATH_AUG_IMAGE and PATH_AUG_MASK
+     """
      AUGMENTATIONS_LIST = albumentations.Compose(
           [
                albumentations.Blur(blur_limit=15, p=0.5),
@@ -92,7 +96,17 @@ def main_augmentation():
 #||                          #||
 ################################
 def main_trainer(img_height=256, img_width=256, img_channels=1, epochs=100, filter_num=32, batch_size=16, learning_rate=0.0001):
-     #Should setup to change filter_num, batch_size and learning_rate
+     """Trains U-Net 2D model and saves epoch data and model (incl. weights) to DEFAULT_LOGS_DIR.
+
+     Args:
+         img_height (int, optional): Individual image height. Defaults to 256.
+         img_width (int, optional): Individual image width. Defaults to 256.
+         img_channels (int, optional): Amount of channels in image. Defaults to 1.
+         epochs (int, optional): Epoch count. Defaults to 100.
+         filter_num (int, optional): Number of filters. Defaults to 32.
+         batch_size (int, optional): Batch size. Defaults to 16.
+         learning_rate (float, optional): Learning rate. Defaults to 0.0001.
+     """
      unetObj = unet.unet_model(filter_num=filter_num, img_height=img_height, img_width=img_width, img_channels=img_channels, epochs=epochs)
      aug_images = niftiSave.load_images(PATH_RAW_IMAGE, normalize=True)
      aug_masks = niftiSave.load_images(PATH_RAW_MASK, normalize=True)
@@ -101,7 +115,6 @@ def main_trainer(img_height=256, img_width=256, img_channels=1, epochs=100, filt
      myModel = unetObj.create_unet_model(filter_num=filter_num)
      optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
      loss = unetObj.j_dice_coef_loss
-     ## SHOULD EXPERIMENT WITH SMOOTHING VALUE IN J_IOU_LOSS
      metrics = [unetObj.j_dice_coef, unetObj.j_iou, losses.bce_dice_loss, losses.dice_loss, losses.bce_jaccard_loss, losses.jaccard_loss]
      myModel.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
@@ -116,18 +129,17 @@ def main_trainer(img_height=256, img_width=256, img_channels=1, epochs=100, filt
      myModelHistorySavePath = os.path.join(DEFAULT_LOGS_DIR, f"2D_fn{filter_num}-bs{batch_size}-lr{learning_rate}.npy")
      np.save(myModelHistorySavePath, myModel_trained.history)
 
-#base fn=32, bs=16, lr=0.0001
-# fn 16 - 32 - 64
-# bs 8 - 16 - 32
-# lr 0.001 - 0.0001 - 0.00001
-main_trainer(epochs=10, filter_num=32, batch_size=16, learning_rate=0.0001)
-
 # ################################
 # #||                          #||
 # #||        Predictor         #||
 # #||                          #||
 # ################################
 def predict(model_path: str):
+     """Predicts a random batch of images
+
+     Args:
+         model_path (str): Path to desired model.
+     """
      predictorObj = predictor.predictor(model=models.load_model(model_path, compile=False), 
                          image_array=niftiSave.load_images(PATH_AUG_IMAGE, normalize=True), 
                          mask_array=niftiSave.load_images(PATH_AUG_MASK, normalize=True))
@@ -136,6 +148,3 @@ def predict(model_path: str):
      niftiSave.save_images(save_path=PATH_PREDICT_SAVE, save_prefix="r", img_iterable=ran_image, mask_bool=False)
      niftiSave.save_images(save_path=PATH_PREDICT_SAVE, save_prefix="m", img_iterable=ran_mask, mask_bool=True)
      niftiSave.save_images(save_path=PATH_PREDICT_SAVE, save_prefix="p", img_iterable=predicted_mask, mask_bool=True)
-
-# model_path = os.path.join(DEFAULT_LOGS_DIR, "fn32-bs16-lr0.0001.h5")
-# predict(model_path=model_path)
