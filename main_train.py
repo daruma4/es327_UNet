@@ -14,6 +14,7 @@ import niftiSave
 import unet
 import predictor
 import augment
+import splitter
 
 #Current working directory of the project
 ROOT_DIR = os.path.abspath("")
@@ -108,8 +109,10 @@ def main_trainer(img_height=256, img_width=256, img_channels=1, epochs=100, filt
          learning_rate (float, optional): Learning rate. Defaults to 0.0001.
      """
      unetObj = unet.unet_model(filter_num=filter_num, img_height=img_height, img_width=img_width, img_channels=img_channels, epochs=epochs)
-     aug_images = niftiSave.load_images(PATH_RAW_IMAGE, normalize=True)
-     aug_masks = niftiSave.load_images(PATH_RAW_MASK, normalize=True)
+     aug_images = niftiSave.load_images(PATH_AUG_IMAGE, normalize=True)
+     aug_masks = niftiSave.load_images(PATH_AUG_MASK, normalize=True)
+
+     x_train, x_val, y_train, y_val = splitter.train_val_splitter(aug_images, aug_masks)
 
      #Prepare model
      myModel = unetObj.create_unet_model(filter_num=filter_num)
@@ -125,10 +128,11 @@ def main_trainer(img_height=256, img_width=256, img_channels=1, epochs=100, filt
      checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath=myModelSavePath,monitor='val_loss',save_best_only=True,verbose=1,mode="min")
 
      #Do fit
-     myModel_trained = myModel.fit(x=aug_images, y=aug_masks, validation_split=0.25, batch_size=batch_size, epochs=unetObj.epochs, shuffle=True, callbacks=[earlystopper, reduce_lr, checkpoint_callback])
+     myModel_trained = myModel.fit(x=x_train, y=y_train, validation_data=(x_val, y_val), batch_size=batch_size, epochs=unetObj.epochs, shuffle=True, callbacks=[checkpoint_callback])
      myModelHistorySavePath = os.path.join(DEFAULT_LOGS_DIR, f"2D_fn{filter_num}-bs{batch_size}-lr{learning_rate}.npy")
      np.save(myModelHistorySavePath, myModel_trained.history)
 
+main_trainer(epochs=10, filter_num=32, batch_size=16, learning_rate=0.0001)
 # ################################
 # #||                          #||
 # #||        Predictor         #||

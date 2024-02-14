@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 def train_val_splitter(x, y, val_split=0.25):
     """Splits x and y iterables randomly using the val_split value.
@@ -30,4 +31,4 @@ def train_val_splitter(x, y, val_split=0.25):
     x = [i for j, i in enumerate(x) if j not in validationIndexes]
     y_val = [y[i] for i in validationIndexes]
     y = [i for j, i in enumerate(y) if j not in validationIndexes]
-    return x, x_val, y, y_val
+    return np.array(x), np.array(x_val), np.array(y), np.array(y_val)
