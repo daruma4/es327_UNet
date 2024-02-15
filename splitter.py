@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-def train_val_splitter(x, y, val_split=0.25):
+def train_val_splitter(x, y, val_split=0.25, seed=2024):
     """Splits x and y iterables randomly using the val_split value.
 
     Args:
@@ -17,6 +17,7 @@ def train_val_splitter(x, y, val_split=0.25):
     """
     x_val = []
     y_val = []
+    random.seed = seed
 
     x_length = len(x)
     y_length = len(y)
